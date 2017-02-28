@@ -12,7 +12,7 @@
 
 /* global window:true */
 
-(function(window){
+(function(window) {
     "use strict";
 
     if(typeof(Object.keys) === "undefined") {
@@ -22,7 +22,7 @@
          * @returns {Array}
          */
         Object.keys = function(obj) {
-            var qq, res = [];
+            let qq, res = [];
             for(qq in obj) {
                 if(obj.hasOwnProperty(qq)) {
                     res.push(qq);
@@ -32,13 +32,13 @@
         };
     }
 
-    Function.prototype._bind = function(ptr){
-        var func = this;
+    Function.prototype._bind = function(ptr) {
+        let func = this;
         return (function(){ return func.call(ptr, arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]); });
     };
 
-    Function.prototype._bindAndStopEvent = function(ptr){
-        var func = this;
+    Function.prototype._bindAndStopEvent = function(ptr) {
+        let func = this;
         return (function(){
             arguments[0].stopPropagation();
             arguments[0].preventDefault();
@@ -51,12 +51,13 @@
      * @returns {string}
      */
     Date.prototype.toSQLGMTTime = function() {
-        function f(n) {
-            // Format integers to have at least two digits.
+        let f = (n) => {
             return n < 10 ? '0' + n : n;
-        }
-        var offInMs = this.getTimezoneOffset()*60*1000;
-        var nd = new Date(this.getTime() + offInMs);
+        };
+
+        let offInMs = this.getTimezoneOffset() * 60 * 1000;
+        let nd = new Date(this.getTime() + offInMs);
+
         return nd.getFullYear() + '-' +
             f(nd.getMonth()+1) + '-' +
             f(nd.getDate()) + ' ' +
@@ -64,18 +65,17 @@
             f(nd.getMinutes()) + ':' +
             f(nd.getSeconds());
     };
+
     /**
      * convert date to SQL datetime format in GMT time zone
      * @returns {string}
      */
     Date.prototype.toSQLDate = function() {
-        function f(n) {
-            // Format integers to have at least two digits.
+        let f = (n) => {
             return n < 10 ? '0' + n : n;
-        }
-        return this.getFullYear() + '-' +
-            f(this.getMonth()+1) + '-' +
-            f(this.getDate());
+        };
+
+        return this.getFullYear() + '-' + f(this.getMonth() + 1) + '-' + f(this.getDate());
     };
 
     /**
@@ -84,19 +84,19 @@
      * @returns {Date}
      */
     Date.prototype.toLocalTimeZone = function() {
-        var offInMs = this.getTimezoneOffset() * 60 * 1000;
+        let offInMs = this.getTimezoneOffset() * 60 * 1000;
         return new Date(this.getTime() - offInMs);
     };
 
-    /**
-     * substruct time zone offset from time
-     * note: return new Date object
-     * @returns {Date}
-     */
-    Date.prototype.toGMT = function() {
-        var offInMs = this.getTimezoneOffset() * 60 * 1000;
-        return new Date(this.getTime() + offInMs);
-    };
+    // /**
+    //  * substruct time zone offset from time
+    //  * note: return new Date object
+    //  * @returns {Date}
+    //  */
+    // Date.prototype.toGMT = function() {
+    //     var offInMs = this.getTimezoneOffset() * 60 * 1000;
+    //     return new Date(this.getTime() + offInMs);
+    // };
 
     if(!window.JSON_parse) {
         /**

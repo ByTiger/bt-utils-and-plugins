@@ -402,7 +402,7 @@
                 if(this._sortColumn) {
                     recList.sort(function(a,b) { return that.sortFunction(that._items[a], that._items[b], that._sortColumn, that._sortOrder); });
                 }
-                var pos = recList.indexOf(itemId);
+                var pos = recList.indexOf(String(itemId));
                 if(pos >= 0) {
                     view = this._createRowItem(item);
                     this._rowByItemId[itemId] = view;
