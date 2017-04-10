@@ -6,8 +6,9 @@
  * BTDate is JavaScript library to make easier your development work.
  * The BTDate contain functions to work with date and times values.
  * @license
- * This software is allowed to use under GPL or you need to obtain commercial license
- * to use it in non-GPL project. Please contact sales@bytiger.com for details
+ * This software is allowed to use under "GPL v3" (http://www.gnu.org/licenses/old-licenses/gpl-3.0.html)
+ * or you need to obtain commercial license to use it in non-"GPL v3" project.
+ * For more info please contact support@bytiger.com for details.
  *******************************************************************/
 
  (function(window) {

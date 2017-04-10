@@ -6,8 +6,9 @@
  * jquery.ext is JavaScript library to make easier your development work.
  * The jquery.ext extend jQuery object with new functions.
  * @license
- * This software is allowed to use under GPL or you need to obtain commercial license
- * to use it in non-GPL project. Please contact sales@bytiger.com for details
+ * This software is allowed to use under "GPL v3" (http://www.gnu.org/licenses/old-licenses/gpl-3.0.html)
+ * or you need to obtain commercial license to use it in non-"GPL v3" project.
+ * For more info please contact support@bytiger.com for details.
  *******************************************************************/
 
 (function() {
@@ -53,7 +54,7 @@
 
     if(!jQuery.fn.leftPos) {
         jQuery.fn.leftPos = function (xx) {
-            if (typeof(xx) == 'undefined') return parseInt(this.css("left"));
+            if (typeof(xx) === 'undefined') return parseInt(this.css("left"));
             jQuery(this).css("left", Math.floor(xx) + "px");
             return this;
         };
@@ -61,7 +62,7 @@
 
     if(!jQuery.fn.topPos) {
         jQuery.fn.topPos = function (yy) {
-            if (typeof(yy) == 'undefined') return parseInt(this.css("top"));
+            if (typeof(yy) === 'undefined') return parseInt(this.css("top"));
             jQuery(this).css("top", Math.floor(yy) + "px");
             return this;
         };

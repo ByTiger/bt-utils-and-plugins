@@ -11,4 +11,4 @@ It's means:
 - You CAN use this all or patricullary for any private projects which you do not plan to share or sell
 - You CAN use this all or patricullary for public projects, BUT in such case you MUST share full source code of your project if asked
 
-If you do not want to share sources then you need to obtain a commercial license. Please contact sales@bytiger.com for details.
+If you do not want to share sources then you need to obtain a commercial license. Please contact [support@bytiger.com] (mailto:support@bytiger.com) for details.

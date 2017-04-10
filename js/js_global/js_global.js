@@ -6,8 +6,9 @@
  * js_global is JavaScript library to make easier your development work.
  * The js_global extends JavaScript's base objects with additional useful functions.
  * @license
- * This software is allowed to use under GPL or you need to obtain commercial license
- * to use it in non-GPL project. Please contact sales@bytiger.com for details
+ * This software is allowed to use under "GPL v3" (http://www.gnu.org/licenses/old-licenses/gpl-3.0.html)
+ * or you need to obtain commercial license to use it in non-"GPL v3" project.
+ * For more info please contact support@bytiger.com for details.
  *******************************************************************/
 
 /* global window:true */
@@ -32,6 +33,13 @@
         };
     }
 
+    /**
+     * support only 4 parameters
+     * why? because .call() twice as faster then .apply()
+     * otherwise you can use just native .bind()
+     * @param {*} ptr
+     * @returns {Function}
+     */
     Function.prototype._bind = function(ptr) {
         let func = this;
         return (function(){ return func.call(ptr, arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]); });
@@ -47,7 +55,7 @@
     };
 
     /**
-     * convert date to SQL datetime format in GMT time zone
+     * convert date to SQL datetime format in GMT time zone (YYYY-MM-DD HH:II:SS)
      * @returns {string}
      */
     Date.prototype.toSQLGMTTime = function() {
@@ -67,7 +75,7 @@
     };
 
     /**
-     * convert date to SQL datetime format in GMT time zone
+     * convert date to SQL datetime format in GMT time zone (YYYY-MM-DD)
      * @returns {string}
      */
     Date.prototype.toSQLDate = function() {
@@ -87,16 +95,6 @@
         let offInMs = this.getTimezoneOffset() * 60 * 1000;
         return new Date(this.getTime() - offInMs);
     };
-
-    // /**
-    //  * substruct time zone offset from time
-    //  * note: return new Date object
-    //  * @returns {Date}
-    //  */
-    // Date.prototype.toGMT = function() {
-    //     var offInMs = this.getTimezoneOffset() * 60 * 1000;
-    //     return new Date(this.getTime() + offInMs);
-    // };
 
     if(!window.JSON_parse) {
         /**

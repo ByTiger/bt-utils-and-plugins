@@ -3,13 +3,14 @@
  * @copyright © bytiger.com, 2013-2017
  * @version 1.0.3
  * @description
- * BTUtils is JavaScript library to make easier your development work.
+ * BTUtils is ES5 JavaScript library to make easier your development work.
  * @license
- * This software is allowed to use under GPL or you need to obtain commercial license
- * to use it in non-GPL project. Please contact sales@bytiger.com for details
+ * This software is allowed to use under "GPL v3" (http://www.gnu.org/licenses/old-licenses/gpl-3.0.html)
+ * or you need to obtain commercial license to use it in non-"GPL v3" project.
+ * For more info please contact support@bytiger.com for details.
+ * @dependencies
+ * - jQuery
  *******************************************************************/
-
- /* global window:true, document:true */
 
 (function(window) {
     "use strict";

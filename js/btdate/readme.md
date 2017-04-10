@@ -352,4 +352,5 @@ It's means:
 - You CAN use this all or patricullary for any private projects which you do not plan to share or sell
 - You CAN use this all or patricullary for public projects, BUT in such case you MUST share full source code of your project if asked
 
-If you do not want to share sources then you need to obtain a commercial license at bytiger.com
+If you do not want to share sources then you need to obtain a commercial license.
+For more info please contact [support@bytiger.com](mailto:support@bytiger.com) for details.
