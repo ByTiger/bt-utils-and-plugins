@@ -414,6 +414,11 @@
             return res;
         },
 
+        /**
+         * remove duplicate values from array (not changing orders)
+         * @param {Array} arr
+         * @return {Array}
+         */
         uniqueArray: function(arr) {
             return arr.filter(function (v,n) { return arr.indexOf(v) >= n; });
         },
@@ -494,21 +499,35 @@
             });
         },
 
+        // /**
+        //  * remove duplicate values from array (not changing orders)
+        //  * @param {Array} a
+        //  * @returns {Array}
+        //  */
+        // removeDuplicatesInArray: function(a) {
+        //     var tmp = {};
+        //     return a.filter(function(v) {
+        //         if(typeof(tmp[v]) === "undefined") {
+        //             tmp[v] = true;
+        //             return true;
+        //         } else {
+        //             return false;
+        //         }
+        //     });
+        // },
+
         /**
-         * remove duplicate values from array (not changing orders)
-         * @param {Array} a
+         * concat several arrays to one (null values and not arrays are skipped)
          * @returns {Array}
          */
-        removeDuplicatesInArray: function(a) {
-            var tmp = {};
-            return a.filter(function(v) {
-                if(typeof(tmp[v]) === "undefined") {
-                    tmp[v] = true;
-                    return true;
-                } else {
-                    return false;
+        concatArrays: function () {
+            var qq, res = [];
+            for(qq = 0; qq < arguments.length; ++qq) {
+                if(arguments[qq] instanceof Array) {
+                    res = res.concat(arguments[qq]);
                 }
-            });
+            }
+            return res;
         },
 
         /**
