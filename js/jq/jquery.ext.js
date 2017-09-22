@@ -1,7 +1,7 @@
 /*******************************************************************
  * @copyright Â© Aliaksei Puzenka, 2013-2017.
  * @copyright Â© bytiger.com, 2013-2017.
- * @version 1.0.1
+ * @version 1.0.2
  * @description
  * jquery.ext is JavaScript library to make easier your development work.
  * The jquery.ext extend jQuery object with new functions.
@@ -274,22 +274,37 @@
          */
         jQuery.fn.moveObjectToVisibleArea = function (xx, yy) {
             this.each(function () {
-                var obj = jQuery(this);
-                var tmp = obj.css("position");
+                let obj = jQuery(this);
+                let tmp = obj.css("position");
                 if (tmp !== "absolute" && tmp !== "fixed") {
                     return;
                 }
 
-                var wndw = jQuery(window).width();
-                var wndh = jQuery(window).height();
+                // define position type
+                let isAbsolutePos = tmp.toLowerCase() === "absolute";
+
+                // get visible screen size
+                let wndw = jQuery(window).width();
+                let wndh = jQuery(window).height();
+
+                // validate Element position
                 if (typeof(xx) === "undefined" || xx === null) {
                     xx = parseInt(obj.position().left, 10);
                 }
                 if (typeof(yy) === "undefined" || yy === null) {
                     yy = parseInt(obj.position().top, 10);
                 }
-                var ww = obj.width();
-                var hh = obj.height();
+
+                // implement offset based on scroll
+                let yOffset = 0;
+                if(isAbsolutePos) {
+                    yOffset = jQuery(window).scrollTop();
+                    yy -= yOffset;
+                }
+
+                // set new Element position
+                let ww = obj.width();
+                let hh = obj.height();
                 if (xx < 0) {
                     obj.leftPos(0);
                 } else if ((xx + ww) > wndw) {
@@ -297,12 +312,13 @@
                 } else if (xx !== parseInt(obj.css("left"), 10)) {
                     obj.css("left", xx + "px");
                 }
+
                 if (yy < 0) {
-                    obj.topPos(0);
+                    obj.topPos(yOffset);
                 } else if ((yy + hh) > wndh) {
-                    obj.topPos(wndh - hh);
+                    obj.topPos(wndh - hh + yOffset);
                 } else if (yy !== parseInt(obj.css("top"), 10)) {
-                    obj.css("top", yy + "px");
+                    obj.css("top", (yy + yOffset) + "px");
                 }
             });
             return this;

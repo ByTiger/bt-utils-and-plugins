@@ -329,11 +329,17 @@
         },
 
         /**
-         * parse time string in format HH:MM[:SS] to seconds as int
+         * parse time string in format HH:MM[:SS] or HH.dh to seconds as int
          * @param {string} str
          * @returns {number}
          */
         stringTimeToSeconds: function(str) {
+            str = str.trim();
+            if(!/^\d+:\d{2}$/.test(str)) {
+                str = str.replace(/,/g, ".");
+                return Math.round(parseFloat(str) * 3600);
+            }
+
             if(!str) {
                 return 0;
             }

@@ -155,6 +155,24 @@ class BTGrid {
         this._gridName = this._element.attr("id") || "";
     }
 
+    get FilterTypes() {
+        return {
+            text: "text",
+            list: "list",
+            time: "time",
+            date: "date",
+            datetime: "datetime",
+            number: "number"
+        };
+    }
+
+    get FilterFormats() {
+        return {
+            seconds: "seconds",
+            string: "string"
+        };
+    }
+
     /********************************************************************************
      * private functions
      ********************************************************************************/
@@ -433,7 +451,7 @@ class BTGrid {
                             break;
                         }
                     }
-                    if (qq > 0) {
+                    if (qq < 0) {
                         view.appendTo(this._table);
                     }
                 }
@@ -523,29 +541,56 @@ class BTGrid {
         let cell = row.find(".col_" + colInfo.id);
         let tmp;
         this._editor = null;
+
         if (this._columnsFilters[columnId]) {
-            if (this._columnsFilters[columnId].type === "list") {
+            if (this._columnsFilters[columnId].type === this.FilterTypes.list) {
                 this._editor = jQuery("<select>", {"class": this._css.inlineEditor});
-                tmp = {};
+
                 BTUtils.each(this._columnsFilters[columnId].data, (flt, id) => {
                     jQuery("<option>", {"value": flt.id || id}).text(flt.value).appendTo(this._editor);
-                    tmp[id] = flt.id || id;
                 });
                 this._editor.val(String(item[columnId]) || "");
+
                 this._editor.get(0)._rowId = itemId;
                 this._editor.get(0)._colId = columnId;
-                this._editor.get(0)._dataMap = tmp;
+                this._editor.get(0)._filter = this._columnsFilters[columnId];
 
                 setTimeout(() => {
                     let event = document.createEvent('MouseEvents');
                     event.initMouseEvent('mousedown', true, true, window);
                     this._editor.get(0).dispatchEvent(event);
                 }, 0);
+            } else if (this._columnsFilters[columnId].type === this.FilterTypes.time) {
+                tmp = "";
+
+                if(this._columnsFilters[columnId].format === this.FilterFormats.seconds) {
+                    tmp = BTUtils.isDef(item[columnId]) ? BTDate.secondsToStringTime(item[columnId]) : "";
+                } else if(this._columnsFilters[columnId].format === this.FilterFormats.string) {
+                    tmp = BTUtils.isDef(item[columnId]) ? item[columnId] : "";
+                }
+
+                this._editor = jQuery("<input>", {"class": this._css.inlineEditor});
+                this._editor.val(tmp);
+
+                this._editor.get(0)._rowId = itemId;
+                this._editor.get(0)._colId = columnId;
+                this._editor.get(0)._filter = this._columnsFilters[columnId];
+            } else if (this._columnsFilters[columnId].type === this.FilterTypes.date || this._columnsFilters[columnId].type === this.FilterTypes.datetime) {
+                tmp = BTUtils.isDef(item[columnId]) ? BTDate.format(item[columnId], this._columnsFilters[columnId].format) : "";
+
+                this._editor = jQuery("<input>", {"class": this._css.inlineEditor});
+                this._editor.val(tmp);
+
+                this._editor.get(0)._rowId = itemId;
+                this._editor.get(0)._colId = columnId;
+                this._editor.get(0)._filter = this._columnsFilters[columnId];
             }
         }
+
         if (!this._editor && (!colInfo.filter || colInfo.filter === "text")) {
             this._editor = jQuery("<input>", {"class": this._css.inlineEditor});
-            this._editor.val(item[columnId] || "");
+            let txt = jQuery("<div>").html(item[columnId] || "").text();
+            this._editor.val(txt);
             this._editor.get(0)._rowId = itemId;
             this._editor.get(0)._colId = columnId;
         }
@@ -569,16 +614,28 @@ class BTGrid {
     }
 
     finishCellEditMode(cancelState) {
-        if (!this._editor) return;
+        if (!this._editor) {
+            return;
+        }
 
         if (cancelState !== false) {
             let itemId = this._editor.get(0)._rowId;
             let columnId = this._editor.get(0)._colId;
-            let dataMap = this._editor.get(0)._dataMap;
+            let filter = this._editor.get(0)._filter;
             let newVal = this._editor.val();
-            if (dataMap && dataMap[newVal]) {
-                newVal = dataMap[newVal];
+
+            if(filter) {
+                if(filter.type === this.FilterTypes.list) {
+                    newVal = filter.data[newVal] ? filter.data[newVal].id : newVal;
+                } else if(filter.type === this.FilterTypes.time && filter.format === this.FilterFormats.seconds) {
+                    newVal = newVal ? BTDate.stringTimeToSeconds(newVal) : null;
+                } else if(filter.type === this.FilterTypes.time && filter.format === this.FilterFormats.string) {
+                    newVal = newVal ? newVal : null;
+                }
             }
+
+            newVal = typeof(newVal) === "string" ? newVal.replace(/</g, "&lt;").replace(/>/g, "&gt;") : newVal;
+
             let item = this._items[itemId];
             if (item) {
                 if (this.onRecordEditFinished(itemId, columnId, newVal) !== false) {
@@ -639,6 +696,9 @@ class BTGrid {
         this._table.on("click", this._toSelector(this._css.headerRow + ">" + this._css.cell), this._onHeaderClick._bind(this));
         this._table.on("contextmenu", this._toSelector(this._css.headerRow + ">" + this._css.cell), this._onHeaderRightClick._bind(this));
         this._table.on("click", this._toSelector(this._css.row), this._onRecordClick._bind(this));
+        // TODO commercial version
+        this._table.on("contextmenu", this._toSelector(this._css.row), this._onRecordRightClick._bind(this));
+        // TODO end commercial version
     }
 
     _detachEvents() {
@@ -653,7 +713,11 @@ class BTGrid {
         let qq = 0;
         let res = null;
         if (fltData instanceof Array) {
-            res = {type: "list", data: {}};
+            res = {
+                type: this.FilterTypes.list,
+                data: {}
+            };
+
             for (qq = 0; qq < fltData.length; ++qq) {
                 if (typeof(fltData[qq]) === "string") {
                     res.data[fltData[qq] || ""] = {
@@ -671,7 +735,11 @@ class BTGrid {
                 }
             }
         } else if (fltData instanceof Object) {
-            res = {type: "list", data: {}};
+            res = {
+                type: this.FilterTypes.list,
+                data: {}
+            };
+
             let id, keys = Object.keys(fltData);
             for (qq = 0; qq < keys.length; ++qq) {
                 id = typeof(fltData[keys[qq]]) === "string" ? fltData[keys[qq]] : fltData[keys[qq]].id;
@@ -684,13 +752,32 @@ class BTGrid {
                 }
             }
         } else if (fltData === "date" || fltData.substr(0, 5) === "date|") {
-            res = {type: "date", format: fltData.length > 5 ? fltData.substr(5) : "yyyy-mm-dd"};
+            res = {
+                type: this.FilterTypes.date,
+                format: fltData.length > 5 ? fltData.substr(5) : "yyyy-mm-dd"
+            };
         } else if (fltData === "datetime" || fltData.substr(0, 9) === "datetime|") {
-            res = {type: "date", format: fltData.length > 9 ? fltData.substr(9) : "yyyy-mm-dd HH:MM:SS"};
+            res = {
+                type: this.FilterTypes.datetime,
+                format: fltData.length > 9 ? fltData.substr(9) : "yyyy-mm-dd HH:MM:SS"
+            };
+        } else if (fltData === "time") {
+            res = {
+                type: this.FilterTypes.time,
+                format: this.FilterFormats.string
+            };
+        } else if (fltData === "timeInSeconds") {
+            res = {
+                type: this.FilterTypes.time,
+                format: this.FilterFormats.seconds
+            };
         } else if (fltData === "number") {
-            res = {type: "number"};
+            res = {
+                type: this.FilterTypes.number};
         } else if (fltData === "text") {
-            res = {type: "text"};
+            res = {
+                type: this.FilterTypes.text
+            };
         }
         return res;
     }
@@ -1039,19 +1126,22 @@ class BTGrid {
         };
 
         let qq, keys, filterItems, classes;
+        let startValue = "";
+        let endValue = "";
+
         if (this._columnsFilters[colId]) {
-            if (this._columnsFilters[colId].type === "list") {
+            if (this._columnsFilters[colId].type === this.FilterTypes.list) {
                 keys = Object.keys(this._columnsFilters[colId].data);
                 filterItems = this._columnsFilters[colId].data;
                 for (qq = 0; qq < keys.length; ++qq) {
                     _addFilterItem(filterItems[keys[qq]]);
                 }
-            } else if (this._columnsFilters[colId].type === "text") {
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.text) {
                 jQuery("<input>", {"class": this._css.filterPopupItem, "data-item-type": "text"})
                     .setValue(this._filtersData[colId] && this._filtersData[colId]["_value"] ? this._filtersData[colId]["_value"] : "")
                     .appendTo(this._filterPopup);
                 this._filterPopup.find("input").eq(0).focus();
-            } else if (this._columnsFilters[colId].type === "number") {
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.number) {
                 jQuery("<div>", {"class": this._css.filterPopupItem, "data-item-type": "min"})
                     .append(jQuery("<span>").html("&gt;"))
                     .append(jQuery("<input>", {"type": "number"}).setValue(this._filtersData[colId] && this._filtersData[colId]["_min"] ? this._filtersData[colId]["_min"] : ""))
@@ -1065,14 +1155,73 @@ class BTGrid {
                     .append(jQuery("<input>", {"type": "number"}).setValue(this._filtersData[colId] && this._filtersData[colId]["_max"] ? this._filtersData[colId]["_max"] : ""))
                     .appendTo(this._filterPopup);
                 this._filterPopup.find("input").eq(1).focus();
-            } else if (this._columnsFilters[colId].type === "datetime") {
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.date) {
+                startValue = "";
+                endValue = "";
+
+                if(this._filtersData[colId] && this._filtersData[colId]["_start_date"]) {
+                    startValue = BTDate.format(this._filtersData[colId]["_start_date"], this._columnsFilters[colId].format);
+                }
+                if(this._filtersData[colId] && this._filtersData[colId]["_end_date"]) {
+                    endValue = BTDate.format(this._filtersData[colId]["_end_date"], this._columnsFilters[colId].format);
+                }
+
                 jQuery("<div>", {"class": this._css.filterPopupItem, "data-item-type": "start-date"})
                     .append(jQuery("<span>").html("&gt;"))
-                    .append(jQuery("<input>", {"type": "date"}).setValue(this._filtersData[colId] && this._filtersData[colId]["_start_date"] ? ToDate(this._filtersData[colId]["_start_date"]).toSQLDate() : ""))
+                    .append(jQuery("<input>", {"type": "date", "placeholder": this._columnsFilters[colId].format}).setValue(startValue))
                     .appendTo(this._filterPopup);
                 jQuery("<div>", {"class": this._css.filterPopupItem, "data-item-type": "end-date"})
                     .append(jQuery("<span>").html("&lt;"))
-                    .append(jQuery("<input>", {"type": "date"}).setValue(this._filtersData[colId] && this._filtersData[colId]["_end_date"] ? ToDate(this._filtersData[colId]["_end_date"]).toSQLDate() : ""))
+                    .append(jQuery("<input>", {"type": "date", "placeholder": this._columnsFilters[colId].format}).setValue(endValue))
+                    .appendTo(this._filterPopup);
+                this._filterPopup.find("input").eq(1).focus();
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.datetime) {
+                startValue = "";
+                endValue = "";
+
+                if(this._filtersData[colId] && this._filtersData[colId]["_start_date"]) {
+                    startValue = BTDate.format(this._filtersData[colId]["_start_date"], this._columnsFilters[colId].format);
+                }
+                if(this._filtersData[colId] && this._filtersData[colId]["_end_date"]) {
+                    endValue = BTDate.format(this._filtersData[colId]["_end_date"], this._columnsFilters[colId].format);
+                }
+
+                jQuery("<div>", {"class": this._css.filterPopupItem, "data-item-type": "start-date"})
+                    .append(jQuery("<span>").html("&gt;"))
+                    .append(jQuery("<input>", {"type": "datetime", "placeholder": this._columnsFilters[colId].format}).setValue(startValue))
+                    .appendTo(this._filterPopup);
+                jQuery("<div>", {"class": this._css.filterPopupItem, "data-item-type": "end-date"})
+                    .append(jQuery("<span>").html("&lt;"))
+                    .append(jQuery("<input>", {"type": "datetime", "placeholder": this._columnsFilters[colId].format}).setValue(endValue))
+                    .appendTo(this._filterPopup);
+                this._filterPopup.find("input").eq(1).focus();
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.time) {
+                startValue = "";
+                endValue = "";
+
+                if(this._filtersData[colId] && this._filtersData[colId]["_start_time"]) {
+                    if(this._columnsFilters[colId].format === this.FilterFormats.string) {
+                        startValue = this._filtersData[colId]["_start_time"]
+                    } else if(this._columnsFilters[colId].format === this.FilterFormats.seconds) {
+                        startValue = BTDate.secondsToStringTime(this._filtersData[colId]["_start_time"]);
+                    }
+                }
+
+                if(this._filtersData[colId] && this._filtersData[colId]["_end_time"]) {
+                    if(this._columnsFilters[colId].format === this.FilterFormats.seconds) {
+                        endValue = this._filtersData[colId]["_end_time"]
+                    } else if(this._columnsFilters[colId].format === this.FilterFormats.string) {
+                        endValue = BTDate.secondsToStringTime(this._filtersData[colId]["_end_time"]);
+                    }
+                }
+
+                jQuery("<div>", {"class": this._css.filterPopupItem, "data-item-type": "start-time"})
+                    .append(jQuery("<span>").html("&gt;"))
+                    .append(jQuery("<input>", {"type": "datetime", "placeholder": "HH:MM"}).setValue(startValue))
+                    .appendTo(this._filterPopup);
+                jQuery("<div>", {"class": this._css.filterPopupItem, "data-item-type": "end-time"})
+                    .append(jQuery("<span>").html("&lt;"))
+                    .append(jQuery("<input>", {"type": "datetime", "placeholder": "HH:MM"}).setValue(endValue))
                     .appendTo(this._filterPopup);
                 this._filterPopup.find("input").eq(1).focus();
             }
@@ -1090,16 +1239,26 @@ class BTGrid {
         if (typeof(colInfo.draw) === "function") {
             text = colInfo.draw(item, colId);
         } else if (this._columnsFilters[colId]) {
-            if (this._columnsFilters[colId].type === "list") {
+            if (this._columnsFilters[colId].type === this.FilterTypes.list) {
                 if (BTUtils.isDef(item[colId]) && this._columnsFilters[colId].data[item[colId]]) {
                     dd = this._columnsFilters[colId].data[item[colId]];
                     text = dd.value;
                     if (dd.css) {
-                        text = '<span style="' + BTGrid.makeStyle(dd.css) + '">' + text + '</span>';
+                        text = '<span style="' + this.makeStyle(dd.css) + '">' + text + '</span>';
                     }
                 }
-            } else if (this._columnsFilters[colId].type === "date") {
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.date) {
                 text = BTUtils.isDef(item[colId]) && (dd = ToDate(item[colId])) !== null ? BTDate.format(dd, this._columnsFilters[colId].format) : "";
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.datetime) {
+                text = BTUtils.isDef(item[colId]) && (dd = ToDate(item[colId])) !== null ? BTDate.format(dd, this._columnsFilters[colId].format) : "";
+            } else if (this._columnsFilters[colId].type === this.FilterTypes.time) {
+                if(this._columnsFilters[colId].format === this.FilterFormats.seconds) {
+                    text = BTUtils.isDef(item[colId]) ? BTDate.secondsToStringTime(item[colId]) : "";
+                } else if(this._columnsFilters[colId].format === this.FilterFormats.string) {
+                    text = BTUtils.isDef(item[colId]) ? item[colId] : "";
+                } else {
+                    text = "";
+                }
             } else {
                 text = item[colId] || "";
             }
@@ -1255,7 +1414,7 @@ class BTGrid {
         }
 
         // prepare list of rows to remove
-        BTUtils.each(this._items, (item, recId) => {
+        BTUtils.each(this._rowByItemId, (item, recId) => {
             if (recList.indexOf(recId) >= 0) {
                 return;
             }
@@ -1340,6 +1499,22 @@ class BTGrid {
         }
         return true;
     }
+
+    // TODO commercial version
+    _onRecordRightClick(event) {
+        let obj = jQuery(event.target);
+        let cell = obj.closest(this._toSelector(this._css.cell));
+        let row = cell.closest(this._toSelector(this._css.row));
+        let rowId = row.attrAsId("data-id");
+        let colId = cell.attr("data-col-id");
+        if (this.onRecordRightClick(event, rowId, colId) !== true) {
+            BTUtils.stopEvent(event);
+            return false;
+        }
+        return true;
+    }
+
+    // TODO end commercial version
 
     filterItem(item, colId) {
         if (!item) return false;
@@ -1453,4 +1628,15 @@ class BTGrid {
 
     onRecordEditFinished(itemId, colId, newValue) {
     }
+
+    // TODO commercial version
+    /**
+     * called when user do right click on row
+     * @param event
+     * @param itemId
+     * @param colId
+     */
+    onRecordRightClick(event, itemId, colId) {
+    }
+    // TODO end commercial version
 }

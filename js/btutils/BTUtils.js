@@ -1,7 +1,7 @@
 /*******************************************************************
  * @copyright © Aliaksei Puzenka, 2013-2017
  * @copyright © bytiger.com, 2013-2017
- * @version 1.0.3
+ * @version 1.0.5
  * @description
  * BTUtils is ES5 JavaScript library to make easier your development work.
  * @license
@@ -194,22 +194,24 @@
 
         /**
          * format number
-         * @param {Number} num
+         * @param {string|Number} num
          * @param {int} digitAfterPoint
          * @returns {string}
          */
         formatFloat: function(num, digitAfterPoint) {
-            var _zeroPad = function(num, width, z) {
-                z = z || '0';
-                num = num + '';
-                return (num.length >= width ? num : new Array(width - num.length + 1).join(z) + num);
-            };
+            if(typeof(num) === "undefined" || num === null || num === "") {
+                return "";
+            }
 
-            var dd = Math.pow(10, digitAfterPoint);
-            var nn = Math.abs(num);
-            var ss = (num < 0 ? "-" : "") + Math.floor(nn) + "." + _zeroPad(Math.floor((nn - Math.floor(nn)) * dd), digitAfterPoint).replace(/0*$/, "");
-            ss = ss.replace(/\.$/, "");
-            return ss;
+            if(typeof(num) === "string") {
+                num = parseFloat(num.replace(/,/, "."));
+            }
+
+            var str = num.toFixed(digitAfterPoint);
+            if(str.indexOf(",") >= 0 || str.indexOf(".") >= 0) {
+                str = str.replace(/0+$/, "").replace(/[.,]?$/, "");
+            }
+            return str;
         },
 
         /**
@@ -499,22 +501,22 @@
             });
         },
 
-        // /**
-        //  * remove duplicate values from array (not changing orders)
-        //  * @param {Array} a
-        //  * @returns {Array}
-        //  */
-        // removeDuplicatesInArray: function(a) {
-        //     var tmp = {};
-        //     return a.filter(function(v) {
-        //         if(typeof(tmp[v]) === "undefined") {
-        //             tmp[v] = true;
-        //             return true;
-        //         } else {
-        //             return false;
-        //         }
-        //     });
-        // },
+        /**
+         * remove duplicate values from array (not changing orders)
+         * @param {Array} a
+         * @returns {Array}
+         */
+        removeDuplicatesInArray: function(a) {
+            var tmp = {};
+            return a.filter(function(v) {
+                if(typeof(tmp[v]) === "undefined") {
+                    tmp[v] = true;
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+        },
 
         /**
          * concat several arrays to one (null values and not arrays are skipped)
@@ -588,7 +590,7 @@
             if(!str) {
                 return [];
             }
-            var qq, ss = String(str).split(delimiter || ",");
+            var qq, ss = typeof(str) === "string" ? str.split(delimiter || ",") : [str];
             for(qq = 0; qq < ss.length; ++qq) {
                 ss[qq] = parseInt(ss[qq], 10);
             }
@@ -644,10 +646,23 @@
          * @param {int} timeOut
          */
         setAnimTimeout: function(func, timeOut) {
+            if(!window.requestAnimFrame) {
+                window.requestAnimFrame = (function () {
+                    return window.requestAnimationFrame ||
+                        window.webkitRequestAnimationFrame ||
+                        window.mozRequestAnimationFrame ||
+                        window.oRequestAnimationFrame ||
+                        window.msRequestAnimationFrame ||
+                        function (callback, element) {
+                            window.setTimeout(callback, 1000 / 60);
+                        };
+                })();
+            }
+
             if(!timeOut) {
-                window.requestAnimationFrame(func);
+                window.requestAnimFrame(func);
             } else {
-                setTimeout(function() { window.requestAnimationFrame(func); }, timeOut);
+                setTimeout(function() { window.requestAnimFrame(func); }, timeOut);
             }
         },
 
@@ -820,7 +835,7 @@
                 for(var qq in fields) {
                     if(fields.hasOwnProperty(qq)) {
                         var val = fields[qq];
-                        if(val instanceof String) {
+                        if(typeof(val) === "string" || typeof(val) === "number") {
                             if(tmp.filter(qq).length > 0) {
                                 tmp.filter(qq).html(val);
                             } else if(tmp.find(qq).length > 0) {
@@ -937,6 +952,7 @@
 
         /**
          * return true is current device is iOS device
+         * NOTE: for phonegap use
          * @returns {boolean}
          */
         isIOS: function() {
@@ -989,6 +1005,11 @@
             return undefined;
         },
 
+        /**
+         * do post request in new window
+         * @param {string} url
+         * @param {object} data -- post data in key:value form
+         */
         openPostWindow: function(url, data) {
             var mapForm = document.createElement("form");
             mapForm.target = "_blank";
@@ -1010,6 +1031,45 @@
             setTimeout(function() {
                 document.body.removeChild(mapForm);
             }, 100);
+        },
+
+        /**
+         * @param {string} url
+         * @returns {{protocol: string, host: (string|*), hostname: string, port: (string|Function), pathname: string, hash, search: (*|string|bkLib.search), origin}}
+         */
+        parseUrl(url) {
+            var tmp = document.createElement('a');
+            tmp.href = "url";
+            return {
+                protocol: tmp.protocol,
+                host: tmp.host,
+                hostname: tmp.hostname,
+                port: tmp.port,
+                pathname: tmp.pathname,
+                hash: tmp.hash,
+                search: tmp.search,
+                origin: tmp.origin
+            };
+        },
+
+        /**
+         * @param {number} lat1
+         * @param {number} lng1
+         * @param {number} lat2
+         * @param {number} lng2
+         * @returns {number}
+         */
+        getDistanceByGSPPosition: function (lat1, lng1, lat2, lng2) {
+            var sin = function (a) {
+                return Math.sin(a * Math.PI / 180);
+            };
+            var cos = function (a) {
+                return Math.cos(a * Math.PI / 180);
+            };
+            var dx = lng2 - lng1;
+            var dy = lat2 - lat1;
+            var a = sin(dy / 2) * sin(dy / 2) + cos(lat1) * cos(lat2) * sin(dx / 2) * sin(dx / 2);
+            return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 6371000;
         }
     };
 })(window);

@@ -1,5 +1,5 @@
 # BTValidate
-BTValidator is PHP class (**BTValidate.php**) to validate arrays structure and data.
+BTValidator is PHP class (**BTValidate.php**) to validate arrays structure and data. Generally for data receaved in request.
 
 ## Licence
 This software is allowed to use under GPL or you need to obtain commercial license
